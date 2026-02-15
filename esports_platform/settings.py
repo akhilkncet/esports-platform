@@ -141,7 +141,6 @@ USE_TZ = True
 
 STATIC_URL = "static/"
 STATIC_ROOT = BASE_DIR / "staticfiles"
-STATICFILES_DIRS = [BASE_DIR / "frontend"]
 
 # WhiteNoise configuration for efficient static file serving
 STORAGES = {
@@ -149,9 +148,6 @@ STORAGES = {
         "BACKEND": "whitenoise.storage.CompressedManifestStaticFilesStorage",
     },
 }
-
-# Templates directory for frontend
-TEMPLATES[0]['DIRS'] = [BASE_DIR / "frontend"]
 
 # Default primary key field type
 # https://docs.djangoproject.com/en/6.0/ref/settings/#default-auto-field

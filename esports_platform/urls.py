@@ -1,7 +1,6 @@
 from django.contrib import admin
 from django.urls import path, include
-from django.views.generic import TemplateView
-from django.contrib.auth.decorators import login_required
+from django.views.generic import RedirectView
 from drf_spectacular.views import (
     SpectacularAPIView,
     SpectacularRedocView,
@@ -29,10 +28,7 @@ urlpatterns = [
     
     path('api-auth/', include('rest_framework.urls')),
     
-    # Frontend routes (protected)
-    path('login/', TemplateView.as_view(template_name='login.html'), name='login'),
-    path('', login_required(TemplateView.as_view(template_name='index.html'), login_url='/login/'), name='home'),
-    path('teams/', login_required(TemplateView.as_view(template_name='teams.html'), login_url='/login/'), name='teams'),
-    path('tournaments/', login_required(TemplateView.as_view(template_name='tournaments.html'), login_url='/login/'), name='tournaments'),
+    # Redirect root URL to Swagger docs
+    path('', RedirectView.as_view(url='/api/docs/', permanent=False), name='root'),
 ]
 
