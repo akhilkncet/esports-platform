@@ -29,8 +29,8 @@ SECRET_KEY = config('SECRET_KEY', default="django-insecure-=(vl40=mu0y#4w!c!&r&8
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = config('DEBUG', default=True, cast=bool)
 
-# ALLOWED_HOSTS - accept Railway domains and localhost
-ALLOWED_HOSTS = config('ALLOWED_HOSTS', default='*', cast=Csv())
+# ALLOWED_HOSTS - accept all hosts (safe for API-only backend)
+ALLOWED_HOSTS = ['*']
 
 
 # Application definition
@@ -249,27 +249,17 @@ CORS_ALLOW_HEADERS = [
     'x-requested-with',
 ]
 
-# Exempt API from CSRF verification for development
-CSRF_TRUSTED_ORIGINS = []
+# CSRF Trusted Origins
+CSRF_TRUSTED_ORIGINS = [
+    "http://localhost:8000",
+    "http://127.0.0.1:8000",
+    "https://web-production-265ac.up.railway.app",  # Your Railway URL
+]
 
-if DEBUG:
-    CSRF_TRUSTED_ORIGINS = [
-        "http://localhost:5500",
-        "http://127.0.0.1:5500",
-        "http://localhost:3000",
-        "http://127.0.0.1:3000",
-        "http://localhost:8000",
-        "http://127.0.0.1:8000",
-    ]
-else:
-    # Production: Get from environment variable
-    # Set in Railway: CSRF_TRUSTED_ORIGINS=https://your-app.railway.app
-    csrf_origins = config('CSRF_TRUSTED_ORIGINS', default='', cast=Csv())
-    if csrf_origins:
-        CSRF_TRUSTED_ORIGINS = csrf_origins
-    
-    # Fallback: Allow the current host
-    CSRF_COOKIE_DOMAIN = None
+# Add any additional origins from environment variable
+if config('CSRF_TRUSTED_ORIGINS', default=''):
+    additional_origins = config('CSRF_TRUSTED_ORIGINS', cast=Csv())
+    CSRF_TRUSTED_ORIGINS.extend(additional_origins)
 
 # Session settings
 SESSION_COOKIE_HTTPONLY = True
@@ -281,18 +271,12 @@ CSRF_COOKIE_HTTPONLY = False
 
 # Production security settings
 if not DEBUG:
-    SECURE_SSL_REDIRECT = True
+    # Disable SSL redirect during debugging
+    # SECURE_SSL_REDIRECT = True
     SESSION_COOKIE_SECURE = True
     CSRF_COOKIE_SECURE = True
     SECURE_BROWSER_XSS_FILTER = True
     SECURE_CONTENT_TYPE_NOSNIFF = True
     X_FRAME_OPTIONS = 'DENY'
-    
-    # Important: Must set this environment variable in Railway
-    # Use the actual Railway app URL: https://your-app-name.up.railway.app
-    if not CSRF_TRUSTED_ORIGINS:
-        # Emergency fallback - this should be set via environment variable
-        import sys
-        print("WARNING: CSRF_TRUSTED_ORIGINS not set!", file=sys.stderr)
 
 
