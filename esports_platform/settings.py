@@ -250,6 +250,8 @@ CORS_ALLOW_HEADERS = [
 ]
 
 # Exempt API from CSRF verification for development
+CSRF_TRUSTED_ORIGINS = []
+
 if DEBUG:
     CSRF_TRUSTED_ORIGINS = [
         "http://localhost:5500",
@@ -260,12 +262,22 @@ if DEBUG:
         "http://127.0.0.1:8000",
     ]
 else:
-    CSRF_TRUSTED_ORIGINS = config('CSRF_TRUSTED_ORIGINS', default='', cast=Csv())
+    # Production: Get from environment variable
+    # Set in Railway: CSRF_TRUSTED_ORIGINS=https://your-app.railway.app
+    csrf_origins = config('CSRF_TRUSTED_ORIGINS', default='', cast=Csv())
+    if csrf_origins:
+        CSRF_TRUSTED_ORIGINS = csrf_origins
+    
+    # Fallback: Allow the current host
+    CSRF_COOKIE_DOMAIN = None
 
 # Session settings
 SESSION_COOKIE_HTTPONLY = True
 SESSION_COOKIE_SAMESITE = 'Lax'
 CSRF_COOKIE_SAMESITE = 'Lax'
+
+# For API-only backend, exempt schema and docs from CSRF
+CSRF_COOKIE_HTTPONLY = False
 
 # Production security settings
 if not DEBUG:
@@ -275,5 +287,12 @@ if not DEBUG:
     SECURE_BROWSER_XSS_FILTER = True
     SECURE_CONTENT_TYPE_NOSNIFF = True
     X_FRAME_OPTIONS = 'DENY'
+    
+    # Important: Must set this environment variable in Railway
+    # Use the actual Railway app URL: https://your-app-name.up.railway.app
+    if not CSRF_TRUSTED_ORIGINS:
+        # Emergency fallback - this should be set via environment variable
+        import sys
+        print("WARNING: CSRF_TRUSTED_ORIGINS not set!", file=sys.stderr)
 
 
