@@ -1,0 +1,10 @@
+{
+  "name": "Summer Masters 2026",
+  "description": "Epic summer tournament with massive prize pool",
+  "organizer": 1,
+  "status": "draft",
+  "start_date": "2026-07-01T10:00:00Z",
+  "end_date": "2026-07-15T20:00:00Z",
+  "prize_pool": "1000000.00",
+  "max_teams": 50
+}

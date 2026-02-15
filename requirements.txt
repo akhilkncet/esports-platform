@@ -1,0 +1,19 @@
+# Core Django
+Django>=5.0.0
+djangorestframework>=3.14.0
+django-filter>=23.5
+drf-spectacular>=0.27.0
+django-cors-headers>=4.3.0
+
+# Production Server
+gunicorn>=21.2.0
+whitenoise>=6.6.0
+
+# Database (PostgreSQL for production)
+psycopg2-binary>=2.9.9
+
+# Environment Variables
+python-decouple>=3.8
+
+# Security & Utils
+django-environ>=0.11.2

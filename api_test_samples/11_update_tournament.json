@@ -1,0 +1,10 @@
+{
+  "name": "Spring Championship 2026 - Finals Week",
+  "description": "Premier spring tournament featuring top 50 teams - NOW IN FINALS!",
+  "organizer": 1,
+  "status": "final_stage",
+  "start_date": "2026-03-15T10:00:00Z",
+  "end_date": "2026-03-25T20:00:00Z",
+  "prize_pool": "750000.00",
+  "max_teams": 50
+}

@@ -1,0 +1,126 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Esports Platform - Home</title>
+    <link rel="stylesheet" href="/static/style.css">
+</head>
+<body>
+    <nav class="navbar">
+        <div class="container">
+            <div class="nav-brand">
+                <h1>🎮 Esports Platform</h1>
+            </div>
+            <ul class="nav-links">
+                <li><a href="/" class="active">Home</a></li>
+                <li><a href="/teams/">Teams</a></li>
+                <li><a href="/tournaments/">Tournaments</a></li>
+                <li><span id="usernameDisplay" style="color: var(--text-secondary); margin-left: 1rem;"></span></li>
+                <li><button onclick="handleLogout()" class="btn btn-secondary btn-sm" style="margin-left: 1rem;">Logout</button></li>
+            </ul>
+        </div>
+    </nav>
+
+    <main class="container">
+        <section class="hero">
+            <h2>Welcome to the Esports Tournament Platform</h2>
+            <p>Manage teams, organize tournaments, and track competitive esports matches</p>
+        </section>
+
+        <section class="stats-grid">
+            <div class="stat-card">
+                <div class="stat-icon">👥</div>
+                <div class="stat-value" id="totalTeams">-</div>
+                <div class="stat-label">Total Teams</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-icon">🏆</div>
+                <div class="stat-value" id="totalTournaments">-</div>
+                <div class="stat-label">Tournaments</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-icon">⚡</div>
+                <div class="stat-value" id="activeTournaments">-</div>
+                <div class="stat-label">Active</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-icon">✓</div>
+                <div class="stat-value" id="completedTournaments">-</div>
+                <div class="stat-label">Completed</div>
+            </div>
+        </section>
+
+        <section class="recent-section">
+            <h3>Recent Tournaments</h3>
+            <div id="recentTournaments" class="tournaments-list">
+                <p class="loading">Loading tournaments...</p>
+            </div>
+        </section>
+    </main>
+
+    <footer class="footer">
+        <div class="container">
+            <p>&copy; 2026 Esports Platform. All rights reserved.</p>
+        </div>
+    </footer>
+
+    <script src="/static/app.js"></script>
+    <script>
+        // Load dashboard stats
+        async function loadDashboard() {
+            // Check authentication first (non-blocking)
+            checkAuthentication();
+
+            try {
+                const [teams, tournaments] = await Promise.all([
+                    api.getTeams(),
+                    api.getTournaments()
+                ]);
+
+                document.getElementById('totalTeams').textContent = teams.length;
+                document.getElementById('totalTournaments').textContent = tournaments.length;
+                
+                const active = tournaments.filter(t => 
+                    ['registration', 'group_stage', 'final_stage'].includes(t.status)
+                ).length;
+                const completed = tournaments.filter(t => t.status === 'completed').length;
+                
+                document.getElementById('activeTournaments').textContent = active;
+                document.getElementById('completedTournaments').textContent = completed;
+
+                // Display recent tournaments
+                const recentContainer = document.getElementById('recentTournaments');
+                if (tournaments.length === 0) {
+                    recentContainer.innerHTML = '<p class="no-data">No tournaments found</p>';
+                    return;
+                }
+
+                const recent = tournaments.slice(0, 5);
+                recentContainer.innerHTML = recent.map(tournament => `
+                    <div class="tournament-card">
+                        <div class="tournament-header">
+                            <h4>${escapeHtml(tournament.name)}</h4>
+                            <span class="status-badge status-${tournament.status}">${formatStatus(tournament.status)}</span>
+                        </div>
+                        <p class="tournament-description">${escapeHtml(tournament.description || 'No description')}</p>
+                        <div class="tournament-meta">
+                            <span>📅 ${formatDate(tournament.start_date)}</span>
+                            ${tournament.prize_pool ? `<span>💰 $${formatNumber(tournament.prize_pool)}</span>` : ''}
+                            <span>👥 ${tournament.max_teams} teams</span>
+                        </div>
+                    </div>
+                `).join('');
+
+            } catch (error) {
+                console.error('Error loading dashboard:', error);
+                document.getElementById('recentTournaments').innerHTML = 
+                    '<p class="error">Error loading data. Make sure the backend server is running.</p>';
+            }
+        }
+
+        // Load dashboard on page load
+        document.addEventListener('DOMContentLoaded', loadDashboard);
+    </script>
+</body>
+</html>

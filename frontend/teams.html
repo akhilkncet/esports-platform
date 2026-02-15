@@ -1,0 +1,200 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Teams - Esports Platform</title>
+    <link rel="stylesheet" href="/static/style.css">
+</head>
+<body>
+    <nav class="navbar">
+        <div class="container">
+            <div class="nav-brand">
+                <h1>🎮 Esports Platform</h1>
+            </div>
+            <ul class="nav-links">
+                <li><a href="/">Home</a></li>
+                <li><a href="/teams/" class="active">Teams</a></li>
+                <li><a href="/tournaments/">Tournaments</a></li>
+                <li><span id="usernameDisplay" style="color: var(--text-secondary); margin-left: 1rem;"></span></li>
+                <li><button onclick="handleLogout()" class="btn btn-secondary btn-sm" style="margin-left: 1rem;">Logout</button></li>
+            </ul>
+        </div>
+    </nav>
+
+    <main class="container">
+        <section class="page-header">
+            <h2>Teams Management</h2>
+            <button class="btn btn-primary" onclick="showCreateTeamModal()">+ Create Team</button>
+        </section>
+
+        <section class="filters">
+            <input type="text" id="searchInput" placeholder="Search teams..." class="search-input">
+            <select id="statusFilter" class="filter-select">
+                <option value="">All Teams</option>
+                <option value="active">Active</option>
+                <option value="inactive">Inactive</option>
+            </select>
+        </section>
+
+        <section id="teamsContainer" class="teams-grid">
+            <p class="loading">Loading teams...</p>
+        </section>
+    </main>
+
+    <!-- Create Team Modal -->
+    <div id="createTeamModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3>Create New Team</h3>
+                <button class="close-btn" onclick="closeModal('createTeamModal')">&times;</button>
+            </div>
+            <form id="createTeamForm" onsubmit="handleCreateTeam(event)">
+                <div class="form-group">
+                    <label for="teamName">Team Name *</label>
+                    <input type="text" id="teamName" required>
+                </div>
+                <div class="form-group">
+                    <label for="teamTag">Team Tag *</label>
+                    <input type="text" id="teamTag" maxlength="10" required>
+                </div>
+                <div class="form-group">
+                    <label for="teamCountry">Country</label>
+                    <input type="text" id="teamCountry">
+                </div>
+                <div class="form-group">
+                    <label for="teamLogo">Logo URL</label>
+                    <input type="url" id="teamLogo">
+                </div>
+                <div class="form-actions">
+                    <button type="button" class="btn btn-secondary" onclick="closeModal('createTeamModal')">Cancel</button>
+                    <button type="submit" class="btn btn-primary">Create Team</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <footer class="footer">
+        <div class="container">
+            <p>&copy; 2026 Esports Platform. All rights reserved.</p>
+        </div>
+    </footer>
+
+    <script src="/static/app.js"></script>
+    <script>
+        let allTeams = [];
+
+        async function loadTeams() {
+            // Check authentication first (non-blocking)
+            checkAuthentication();
+
+            try {
+                allTeams = await api.getTeams();
+                displayTeams(allTeams);
+            } catch (error) {
+                console.error('Error loading teams:', error);
+                document.getElementById('teamsContainer').innerHTML = 
+                    '<p class="error">Error loading teams. Make sure the backend server is running.</p>';
+            }
+        }
+
+        function displayTeams(teams) {
+            const container = document.getElementById('teamsContainer');
+            
+            if (teams.length === 0) {
+                container.innerHTML = '<p class="no-data">No teams found</p>';
+                return;
+            }
+
+            container.innerHTML = teams.map(team => `
+                <div class="team-card">
+                    <div class="team-logo">
+                        ${team.logo ? `<img src="${escapeHtml(team.logo)}" alt="${escapeHtml(team.name)}">` : '🎮'}
+                    </div>
+                    <div class="team-info">
+                        <h3>${escapeHtml(team.name)}</h3>
+                        <p class="team-tag">${escapeHtml(team.tag)}</p>
+                        ${team.country ? `<p class="team-country">🌍 ${escapeHtml(team.country)}</p>` : ''}
+                        <span class="status-badge ${team.is_active ? 'status-active' : 'status-inactive'}">
+                            ${team.is_active ? 'Active' : 'Inactive'}
+                        </span>
+                    </div>
+                    <div class="team-actions">
+                        <button class="btn btn-sm btn-secondary" onclick="editTeam(${team.id})">Edit</button>
+                        <button class="btn btn-sm btn-danger" onclick="deleteTeam(${team.id})">Delete</button>
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        function filterTeams() {
+            const searchTerm = document.getElementById('searchInput').value.toLowerCase();
+            const statusFilter = document.getElementById('statusFilter').value;
+
+            let filtered = allTeams.filter(team => {
+                const matchesSearch = team.name.toLowerCase().includes(searchTerm) || 
+                                    team.tag.toLowerCase().includes(searchTerm);
+                
+                const matchesStatus = !statusFilter || 
+                                    (statusFilter === 'active' && team.is_active) ||
+                                    (statusFilter === 'inactive' && !team.is_active);
+                
+                return matchesSearch && matchesStatus;
+            });
+
+            displayTeams(filtered);
+        }
+
+        function showCreateTeamModal() {
+            document.getElementById('createTeamModal').style.display = 'flex';
+        }
+
+        async function handleCreateTeam(event) {
+            event.preventDefault();
+            
+            const teamData = {
+                name: document.getElementById('teamName').value,
+                tag: document.getElementById('teamTag').value,
+                country: document.getElementById('teamCountry').value,
+                logo: document.getElementById('teamLogo').value,
+                is_active: true
+            };
+
+            try {
+                await api.createTeam(teamData);
+                closeModal('createTeamModal');
+                document.getElementById('createTeamForm').reset();
+                await loadTeams();
+                showNotification('Team created successfully!', 'success');
+            } catch (error) {
+                console.error('Error creating team:', error);
+                showNotification('Error creating team: ' + error.message, 'error');
+            }
+        }
+
+        async function deleteTeam(teamId) {
+            if (!confirm('Are you sure you want to delete this team?')) {
+                return;
+            }
+
+            try {
+                await api.deleteTeam(teamId);
+                await loadTeams();
+                showNotification('Team deleted successfully!', 'success');
+            } catch (error) {
+                console.error('Error deleting team:', error);
+                showNotification('Error deleting team: ' + error.message, 'error');
+            }
+        }
+
+        async function editTeam(teamId) {
+            showNotification('Edit functionality coming soon!', 'info');
+        }
+
+        // Event listeners
+        document.getElementById('searchInput').addEventListener('input', filterTeams);
+        document.getElementById('statusFilter').addEventListener('change', filterTeams);
+        document.addEventListener('DOMContentLoaded', loadTeams);
+    </script>
+</body>
+</html>
