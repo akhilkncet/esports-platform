@@ -209,7 +209,7 @@ SPECTACULAR_SETTINGS = {
     'SORT_OPERATIONS': False,
 }
 
-# CORS settings - Allow frontend to access API
+# CORS settings - Allow API access from different origins
 if DEBUG:
     # Development: Allow all origins
     CORS_ALLOW_ALL_ORIGINS = True
